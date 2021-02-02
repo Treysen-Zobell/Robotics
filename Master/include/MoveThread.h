@@ -16,12 +16,14 @@ public:
   float endPos;
 
   vex::directionType dir;
+  vex::motor encoderMotor;
   vex::motor motor;
 
-  MoveThread(vex::motor motor, float distance);
+  MoveThread(vex::motor motor, vex::motor encoderMotor, float distance);
   ~MoveThread();
 
   void start();
   void update();
   bool done();
+  float getPos();
 };

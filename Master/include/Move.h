@@ -1,8 +1,18 @@
 
 #include <vex.h>
 
+#include <vector>
+
 struct Move
 {
-  static void moveMM(int distance, vex::motor leftDrive1, vex::motor leftDrive2, vex::motor rightDrive1, vex::motor rightDrive2);
-  static void moveDeg(int deg, vex::motor leftDrive1, vex::motor leftDrive2, vex::motor rightDrive1, vex::motor rightDrive2);
+  static float leftPos;
+  static float rightPos;
+
+  static void leftRear();
+  static void leftFront();
+  static void rightRear();
+  static void rightFront();
+
+  static void moveMM(int distance);
+  static void moveDeg(int deg);
 };

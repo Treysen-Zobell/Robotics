@@ -1,9 +1,9 @@
 
 #include "MoveThread.h"
 
-MoveThread::MoveThread(vex::motor motor, float distance) : motor(motor)
+MoveThread::MoveThread(vex::motor motor, vex::motor encoderMotor, float distance) : encoderMotor(encoderMotor), motor(motor)
 {
-  this->startPos = motor.rotation(vex::deg);
+  this->startPos = this->getPos();
   this->endPos = this->startPos + distance;
   this->dir = (this->startPos < this->endPos) ? vex::directionType::fwd : vex::directionType::rev;
 }
@@ -12,7 +12,7 @@ MoveThread::~MoveThread() {}
 
 void MoveThread::start()
 {
-  this->motor.spin(this->dir, 80, vex::pct);
+  this->motor.spin(this->dir, 50, vex::pct);
 }
 
 // Use movement phases to reduce oscillation.
@@ -23,8 +23,8 @@ void MoveThread::update()
 {
   if (this->movePhase == 0)
   {
-    if ((this->motor.rotation(vex::deg) > this->endPos - 200 && this->startPos < this->endPos) || 
-        (this->motor.rotation(vex::deg) < this->endPos + 200 && this->startPos > this->endPos))
+    if ((this->getPos() > this->endPos - 200 && this->startPos < this->endPos) || 
+        (this->getPos() < this->endPos + 200 && this->startPos > this->endPos))
     {
       this->movePhase = 1;
 
@@ -33,11 +33,11 @@ void MoveThread::update()
 
   if (this->movePhase == 1)
   {
-    if (this->motor.rotation(vex::deg) > this->endPos + 40)
-      this->motor.spin(vex::directionType::rev, 40, vex::pct);
+    if (this->getPos() > this->endPos - 40)
+      this->motor.spin(vex::directionType::rev, 10, vex::pct);
 
-    else if (this->motor.rotation(vex::deg) < this->endPos - 40)
-      this->motor.spin(vex::directionType::fwd, 40, vex::pct);
+    else if (this->getPos() < this->endPos + 40)
+      this->motor.spin(vex::directionType::fwd, 10, vex::pct);
 
     else
       this->movePhase = 3;
@@ -45,11 +45,11 @@ void MoveThread::update()
 
   else if (this->movePhase == 2)
   {
-    if (this->motor.rotation(vex::deg) > this->endPos + 2)
-      this->motor.spin(vex::directionType::rev, 40, vex::pct);
+    if (this->getPos() > this->endPos - 10)
+      this->motor.spin(vex::directionType::rev, 1, vex::pct);
 
-    else if (this->motor.rotation(vex::deg) < this->endPos - 2)
-      this->motor.spin(vex::directionType::fwd, 40, vex::pct);
+    else if (this->getPos() < this->endPos + 10)
+      this->motor.spin(vex::directionType::fwd, 1, vex::pct);
 
     else
       this->movePhase = 3;
@@ -57,21 +57,29 @@ void MoveThread::update()
 
   else if (this->movePhase == 3)
   {
-    if (this->motor.rotation(vex::deg) > this->endPos + 1.2)
+    if (this->motor.rotation(vex::deg) != this->encoderMotor.rotation(vex::deg))
     {
-      this->motor.spin(vex::directionType::rev, 2, vex::pct);
+      this->motor.stop();
+      this->complete = true;
+    }
+    
+    if (this->getPos() > this->endPos + 4.0)
+    {
+      this->motor.spin(vex::directionType::rev, 0.5, vex::pct);
       this->holdDuration = 0;
     }
 
-    else if (this->motor.rotation(vex::deg) < this->endPos - 1.2)
+    else if (this->getPos() < this->endPos - 4.0)
     {
-      this->motor.spin(vex::directionType::fwd, 2, vex::pct);
+      this->motor.spin(vex::directionType::fwd, 0.5, vex::pct);
       this->holdDuration = 0;
     }
 
     else
     {
-      this->motor.spin(vex::directionType::fwd, 0, vex::pct);
+      // this->motor.spin(vex::directionType::fwd, 0, vex::pct);
+      this->motor.setStopping(vex::brake);
+      wait(100, vex::msec);
       this->holdDuration++;
       if (this->holdDuration > 10)
         this->movePhase = 4;
@@ -89,4 +97,9 @@ void MoveThread::update()
 bool MoveThread::done()
 {
   return this->complete;
+}
+
+float MoveThread::getPos()
+{
+  return this->encoderMotor.rotation(vex::deg);
 }

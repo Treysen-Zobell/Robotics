@@ -1,46 +1,60 @@
 
 #include "Move.h"
 
-#include "MoveThread.h"
+#include <algorithm>
+#include <cmath>
 
-void Move::moveMM(int mm, vex::motor leftDrive1, vex::motor leftDrive2, vex::motor rightDrive1, vex::motor rightDrive2)
+float Move::leftPos = 0;
+float Move::rightPos = 0;
+
+void Move::leftRear()
 {
-  MoveThread threadL1(leftDrive1, (int)(mm * 1.13));
-  MoveThread threadL2(leftDrive2, (int)(mm * 1.13));
-  MoveThread threadR1(rightDrive1, (int)(mm * 1.13));
-  MoveThread threadR2(rightDrive2, (int)(mm * 1.13));
-  threadL1.start();
-  threadL2.start();
-  threadR1.start();
-  threadR2.start();
-
-  while (!threadL1.done() || !threadR1.done())
-  {
-    threadL1.update();
-	  threadL2.update();
-    threadR1.update();
-	  threadR2.update();
-    wait(15, vex::msec);
-  }
+  LeftDrive.spinFor(vex::directionType::fwd, Move::leftPos, vex::deg);
+  while (!LeftDrive.isDone()) { wait(10, vex::msec); }
 }
 
-void Move::moveDeg(int deg, vex::motor leftDrive1, vex::motor leftDrive2, vex::motor rightDrive1, vex::motor rightDrive2)
+void Move::leftFront()
 {
-  MoveThread threadL1(leftDrive1, (int)(deg * 3.6));
-  MoveThread threadL2(leftDrive2, (int)(deg * 3.6));
-  MoveThread threadR1(rightDrive1, -(int)(deg * 3.6));
-  MoveThread threadR2(rightDrive2, -(int)(deg * 3.6));
-  threadL1.start();
-  threadL2.start();
-  threadR1.start();
-  threadR2.start();
+  FrontLeftDrive.spinFor(vex::directionType::fwd, Move::leftPos, vex::deg);
+  while (!FrontLeftDrive.isDone()) { wait(10, vex::msec); }
+}
 
-  while (!threadL1.done() || !threadR1.done())
-  {
-    threadL1.update();
-	  threadL2.update();
-    threadR1.update();
-	  threadR2.update();
-    wait(15, vex::msec);
-  }
+void Move::rightRear()
+{
+  RightDrive.spinFor(vex::directionType::fwd, Move::rightPos, vex::deg);
+  while (!RightDrive.isDone()) { wait(10, vex::msec); }
+}
+
+void Move::rightFront()
+{
+  FrontRightDrive.spinFor(vex::directionType::fwd, Move::rightPos, vex::deg);
+  while (!FrontRightDrive.isDone()) { wait(10, vex::msec); }
+}
+
+void Move::moveMM(int mm)
+{
+  Move::leftPos = (int)(mm * 1.13);
+  Move::rightPos = (int)(mm * 1.13);
+  vex::thread l1(Move::leftRear);
+  vex::thread l2(Move::leftFront);
+  vex::thread r1(Move::rightRear);
+  vex::thread r2(Move::rightFront);
+  l1.join();
+  l2.join();
+  r1.join();
+  r2.join();
+}
+
+void Move::moveDeg(int deg)
+{
+  Move::leftPos = (int)(deg * 3.6);
+  Move::rightPos = -(int)(deg * 3.6);
+  vex::thread l1(Move::leftRear);
+  vex::thread l2(Move::leftFront);
+  vex::thread r1(Move::rightRear);
+  vex::thread r2(Move::rightFront);
+  l1.join();
+  l2.join();
+  r1.join();
+  r2.join();
 }

@@ -16,12 +16,13 @@ motor LeftIntake = motor(PORT2, ratio18_1, false);
 motor RightLift = motor(PORT9, ratio18_1, true);
 motor LeftLift = motor(PORT3, ratio18_1, false);
 /*vex-vision-config:begin*/
-signature Vision6__B_BALL = signature (1, -2963, -1839, -2400, 7223, 10627, 8924, 1.9, 0);
-signature Vision6__R_BALL = signature (2, 6377, 9115, 7746, -529, 321, -104, 2.4, 0);
-vision Vision6 = vision (PORT6, 50, Vision6__B_BALL, Vision6__R_BALL);
+signature Vision6__B_BALL = signature (1, -2963, -1839, -2400, 7223, 10627, 8924, 2.2, 0);
+signature Vision6__R_BALL = signature (2, 6377, 9115, 7746, -529, 321, -104, 2.2, 0);
+signature Vision6__SIG_7 = signature (7, 0, 0, 0, 0, 0, 0, 4.3, 0);
+vision Vision6 = vision (PORT6, 76, Vision6__B_BALL, Vision6__R_BALL, Vision6__SIG_7);
 /*vex-vision-config:end*/
 motor BarMotor = motor(PORT4, ratio18_1, false);
-motor FrontRightDrive = motor(PORT19, ratio18_1, false);
+motor FrontRightDrive = motor(PORT19, ratio18_1, true);
 motor FrontLeftDrive = motor(PORT11, ratio18_1, false);
 distance Distance14 = distance(PORT14);
 
