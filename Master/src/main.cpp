@@ -16,84 +16,37 @@
 // FrontLeftDrive       motor         11              
 // Distance14           distance      14              
 // ---- END VEXCODE CONFIGURED DEVICES ----
-
+#include "Utils.h"
 #include "MoveThread.h"
 #include "Move.h"
 
-#define INVERT_TURNS 1 // 1 if left side, -1 if right
-#define VISION_BALL Vision6__B_BALL // Vision6__R_BALL if red, Vision6__B_BALL if blue
-#define CORNER_ONLY false
-#define SKILLZ true
-
 using namespace vex;
 competition Competition;
+#define INVERT_TURNS 1 // 1 if left side, -1 if right
+#define VISION_BALL Vision6__R_BALL // Vision6__R_BALL if red, Vision6__B_BALL if blue
+#define CORNER_ONLY false
+#define MODE 2 // 0 for homerow, 1 for one or two towers, 2 for skills, 4 for testing
+#define TURN_SPEED 0.65
+#define SLOW_TURN_SPEED 0.20
+#define DRIVE_SPEED 0.80
 
-unsigned int AmmonX = 0x0000;
+// Captains Log, Oil Dirt Date 2-13-2021
+// All systems nominal. We have recently defeated the traitorous ferengi, unfortunately we have been forced to team up with them at the admiral's command.
+
 int driveX;
 int driveY;
-int ldrive;
+int ldrive; 
 int rdrive;
-int blueSize;
-int redSize;
 int motorDir;
 int motorDist;
-double visionScale = 3;
-
-// Centers the detected object
-void SensorControl(double visionScale)
-{
- if(Vision6.largestObject.centerX > 100 && Vision6.largestObject.centerX < 200)
- {
-   driveX += (Vision6.largestObject.centerX - 150) / visionScale;
-   ldrive += driveX;
-   rdrive -= driveX;
- }
-}
-
-int spinLeft()
-{
- LeftDrive.spinFor(reverse, motorDist, degrees);
-  while(FrontLeftDrive.isDone() == false)
- {
-   wait(10, msec);
- }
- return 0;
-}
-
-int spinFrontLeft()
-{
- FrontLeftDrive.spinFor(reverse, motorDist, degrees);
- while(FrontLeftDrive.isDone() == false)
- {
-   this_thread::sleep_for(25);
- }
- return 0;
-}
-
-int spinRight()
-{
- RightDrive.spinFor(reverse, motorDist, degrees);
- while(RightDrive.isDone() == false)
- {
-   this_thread::sleep_for(25);
- }
- return 0;
-}
-
-int spinFrontRight()
-{
- FrontRightDrive.spinFor(reverse, motorDist, degrees);
- while(FrontRightDrive.isDone() == false)
- {
-   this_thread::sleep_for(25);
- }
- return 0;
-}
+int startPosition;
+int blueSize;
+int redSize;
 
 
-// Senses for largest object, color independent
 void multipleColor()
 {
+  // Senses for largest object, color independent
   Vision6.takeSnapshot(Vision6__B_BALL);
   blueSize = Vision6.largestObject.height * Vision6.largestObject.width;
   Vision6.takeSnapshot(Vision6__R_BALL);
@@ -102,6 +55,81 @@ void multipleColor()
   {
     Vision6.takeSnapshot(Vision6__B_BALL);
   }
+}
+
+void driveSpeed(int speedliness)
+{
+  RearLeftDrive.setVelocity(speedliness, pct);
+  FrontLeftDrive.setVelocity(speedliness, pct);
+  RearRightDrive.setVelocity(speedliness, pct);
+  FrontRightDrive.setVelocity(speedliness, pct);
+}
+// Centers the detected object
+void SensorControl(double visionScale, int driveDist, int driveSpeed, bool auton)
+{ 
+ if(auton == true)
+ {
+  // Initial speed
+  startPosition = RearLeftDrive.rotation(degrees);
+  if(driveDist < 0)
+  {
+     while(RearLeftDrive.rotation(degrees) > startPosition + driveDist)
+  {
+      ldrive = -driveSpeed;
+      rdrive = -driveSpeed;
+  //Vision6.takeSnapshot(VISION_BALL);
+  multipleColor();
+  driveX = 0;
+
+  if(Vision6.largestObject.centerX > 100 && Vision6.largestObject.centerX < 200)
+  {
+    driveX += (Vision6.largestObject.centerX - 150) / visionScale;
+    ldrive += driveX;
+    rdrive -= driveX;
+  }
+
+  // Update motor speeds
+  RearLeftDrive.spin(fwd, ldrive, pct);
+  FrontLeftDrive.spin(fwd, ldrive, pct);
+  RearRightDrive.spin(fwd, rdrive, pct);
+  FrontRightDrive.spin(fwd, rdrive, pct);
+  }
+ }
+ else
+ {
+   while(RearLeftDrive.rotation(degrees) < startPosition + driveDist)
+  {
+      ldrive = driveSpeed;
+      rdrive = driveSpeed;
+  //Vision6.takeSnapshot(VISION_BALL);
+  multipleColor();
+  driveX = 0;
+
+  if(Vision6.largestObject.centerX > 100 && Vision6.largestObject.centerX < 200)
+  {
+    driveX += (Vision6.largestObject.centerX - 150) / visionScale;
+    ldrive += driveX;
+    rdrive -= driveX;
+  }
+
+  // Update motor speeds
+  RearLeftDrive.spin(fwd, ldrive, pct);
+  FrontLeftDrive.spin(fwd, ldrive, pct);
+  RearRightDrive.spin(fwd, rdrive, pct);
+  FrontRightDrive.spin(fwd, rdrive, pct);
+  }
+ }
+}
+ 
+ else
+ {
+   if(Vision6.largestObject.centerX > 100 && Vision6.largestObject.centerX < 200)
+  {
+    driveX += (Vision6.largestObject.centerX - 150) / visionScale;
+    ldrive += driveX;
+    rdrive -= driveX;
+  }
+ }
 }
 
 void setIntakeSpeed(int speed)
@@ -170,29 +198,9 @@ void chainControl()
   }
 }
 
-void spinAllMotors(int motorDist)
-{
-
-  thread a = thread(spinLeft);
-  // std::string b =  + ;
-  // thread a = thread(spinRight);
-  thread c = thread(spinFrontLeft);
-  thread d = thread(spinFrontRight);
-}
-
-void coolTurn(int motorDist, int motorDir)
-{
-  thread a = thread(spinLeft);
-  thread b = thread(spinRight);
-  motorDir = motorDir * -1;
-  thread c = thread(spinRight);
-  thread d = thread(spinFrontRight);
-
-}
-
 void motorCheck()
 {
-while(LeftDrive.isDone() == false or FrontLeftDrive.isDone() == false or RightDrive.isDone() == false or FrontRightDrive.isDone() == false)
+  while(RearLeftDrive.isDone() == false || FrontLeftDrive.isDone() == false || RearRightDrive.isDone() == false || FrontRightDrive.isDone() == false)
   {
     wait(10, msec);
   }
@@ -204,25 +212,106 @@ void pre_auton(void)
   vexcodeInit();
 }
 
-  //Autonomous Function(s):
+//Autonomous Function(s):
 void autonomous(void)
 {
-  LeftDrive.setVelocity(80, pct);
-  FrontLeftDrive.setVelocity(80, pct);
-  RightDrive.setVelocity(80, pct);
-  FrontRightDrive.setVelocity(80, pct);
-  if(SKILLZ)
+  driveSpeed(60);
+  if(MODE == 2) //skills  //////////////////////////////////////////////////////////////////////////////////////
   {
 
+  //Turns and deposits preload into goal, turns to face ball
+  Move::moveDeg(20);
+  setLiftSpeed(100);
+  wait(400, msec);
+  setLiftSpeed(0);
+  Move::moveDeg(10);
+
+  //Moves Forward and grabs first ball
+  //SimpleMove::moveMM(300);
+  setIntakeSpeed(100);
+  SensorControl(3.5, 500, 50, true);
+  //Utils::brake();
+  //driveSpeed(50); Move::moveDeg(-10);
+  //Utils::brake();
+  SensorControl(4, 600, 50, true);
+  setIntakeSpeed(0);
+  Utils::brake();
+
+  //Turns to face away from corner goal, backs up to goal
+  driveSpeed(50); Move::moveDeg(100);
+  Utils::brake();
+  setIntakeSpeed(100);
+  setLiftSpeed(100);
+  SensorControl(3, -350, 80, true);
+
+  //Deposits ball
+  wait(1700, msec);
+  setLiftSpeed(0);
+
+  //Moves forward and grabs ball on the center line
+  Move::moveMM(200);
+  Utils::brake();
+  Move::moveDeg(-35);
+  Utils::brake();
+  SensorControl(4, 1350, 80, true);
+  Utils::brake();
+
+  //Turns away from side goal, deposits ball 
+  Move::moveDeg(90);
+  Utils::brake();
+  setLiftSpeed(100);
+  SensorControl(4, -150, 80, true);
+  Utils::brake();
+  wait(1500, msec);
+  setLiftSpeed(0);
+
+  //uses vision to line up, grabs other ball
+  SensorControl(3.5, 450, 50, true);
+  Utils::brake();
+
+  // Turns and grabs ball near corner goal
+  Move::moveMM(200);
+  Utils::brake();
+  Move::moveDeg(-90);
+  Utils::brake();
+  SensorControl(4, 1400, 70, true);
+  Utils::brake();
+
+  // Backs up, turns away from corner goal, backs up using vision
+  Move::moveMM(-650);
+  Utils::brake();
+  Move::moveDeg(145);
+  Utils::brake();
+  setLiftSpeed(50);
+  SensorControl(4, -700, 70, true);
+  Utils::brake();
+  setIntakeSpeed(0);
+  setLiftSpeed(100);
+  wait(1500, msec);
+  setLiftSpeed(0);
+
+  //Moves away from goal, turns toward ball and grabs it
+  Move::moveMM(250);
+  Utils::brake();
+  //Move::moveDeg(-15);
+  Utils::brake();
+  setIntakeSpeed(100);
+  SensorControl(4, 1575, 80, true);
+
+  //Turns away from side goal, backs up to it using vision
+  Move::moveDeg(85);
+  Utils::brake();
+  SensorControl(4, -700, 70, true);
+  setLiftSpeed(100);
+  wait(1000, msec);
+
   }
-  else
+  if(MODE == 0) // Homerow auton //////////////////////////////////////////////////////
   {
 
-  }
-
-// New Autonomous(Home Row)
-  //Move Back
-  Move::moveMM(-200);
+  //SimpleMove Back
+  Move::moveMM(-250);
+  Utils::brake();
 
   // Turn to face goal
   Move::moveDeg(45 * INVERT_TURNS);
@@ -230,17 +319,27 @@ void autonomous(void)
   // Move Forward and grab ball
   setIntakeSpeed(100);
   //setLiftSpeed(100);
-  Move::moveMM(200);
+  SensorControl(3, 200, 80, true);
+  Utils::brake();
+  //SimpleMove::moveMM(200);
 
-  // 5. Reverse from goal, turn 180deg, reverse to goal
+  // 5. Reverse from goal, turn sideways, move forward 
   setIntakeSpeed(0);
-  Move::moveMM(-300);
-  Move::moveDeg(175);
-  Move::moveMM(-475);
+  driveSpeed(80); Move::moveMM(-225);
+  Utils::brake();
+  Move::moveDeg(60);
+  Utils::brake();
+  Move::moveMM(150);
+
+  // Turn to face away from goal, back up using vision
+  Move::moveDeg(100);
+  SensorControl(3.5, -300, 75, true);
+  Utils::brake();
+  wait(400, msec);
 
   //Deposit payload
   setLiftSpeed(100);
-  wait(200, msec);
+  wait(500, msec);
   setLiftSpeed(0);
 
   //Move Forward, turn towards center
@@ -248,27 +347,36 @@ void autonomous(void)
   Move::moveDeg(45 * INVERT_TURNS);
 
   //Move to center goal, turn to face away from goal
-  Move::moveMM(1400);
-  Move::moveDeg(-90 * INVERT_TURNS);
+  driveSpeed(90); Move::moveMM(1200);
+  Move::moveDeg(-85 * INVERT_TURNS);
+  Utils::brake();
 
   //reverse to goal, deposit ball
+  setLiftSpeed(80);
+  setIntakeSpeed(80);
+  //SimpleMove::moveMM(-375);
+  SensorControl(3.5, -150, 70, true);
+  Utils::brake();
   setLiftSpeed(100);
   setIntakeSpeed(100);
-  Move::moveMM(-400);
-  wait(200, msec);
+  wait(1300, msec);
   setLiftSpeed(0);
   setIntakeSpeed(0);
 
-  //Move forward, turn towards corner goal
-  Move::moveMM(200);
+  //SimpleMove forward, turn towards corner goal
+  Move::moveMM(400);
   Move::moveDeg(90 * INVERT_TURNS);
+  Utils::brake();
 
-  //Move to corner goal, turn towards it
-  Move::moveMM(1500);
-  Move::moveDeg(45 * INVERT_TURNS);
+  //SimpleMove to corner goal, turn towards it
+  Move::moveMM(950);
+  Utils::brake();
+  Move::moveDeg(50 * INVERT_TURNS);
+  Utils::brake();
 
   //Approach using active vision
   setIntakeSpeed(100);
+  /*
   float leftEndPosition = LeftDrive.rotation(deg) + 600;
     while (LeftDrive.rotation(deg) < leftEndPosition)
     {
@@ -285,18 +393,24 @@ void autonomous(void)
       RightDrive.spin(fwd, rdrive, pct);
       FrontRightDrive.spin(fwd, rdrive, pct);
     }
+    */
+  SensorControl(3, 400, 80, true);
 
   // Reverse, turn 180 degrees, reverse to goal
-  Move::moveMM(-300);
-  Move::moveDeg(175);
-  Move::moveMM(-475);
+  Move::moveMM(-160);
+  Utils::brake();
+  Move::moveDeg(170);
+  Utils::brake();
+  Move::moveMM(-265);
+  Utils::brake();
 
   //Deposit Ball
   setLiftSpeed(100);
-
   //End of homerow autonomous
+  }
 
-/*
+if(MODE == 1) // One/two tower auton  ///////////////////////////////////////////////////
+{
   // 1. Turn
   Move::moveDeg(20 * INVERT_TURNS);
 
@@ -313,13 +427,15 @@ void autonomous(void)
 
   if (!CORNER_ONLY)
   {
-    // 3. Move away from goal and turn to face other goal
-    Move::moveMM(875);
-    Move::moveDeg(-85 * INVERT_TURNS);
+    // 3. SimpleMove away from goal and turn to face other goal
+    Move::moveMM(900);
+    Move::moveDeg(-80 * INVERT_TURNS);
 
     // 4. Approach, correcting using active vision
     setIntakeSpeed(100);
     //float rightEndPosition = RightDrive.rotation(deg) + 600;
+    SensorControl(3, 600, 80, true);
+    /*
     float leftEndPosition = LeftDrive.rotation(deg) + 600;
     while (LeftDrive.rotation(deg) < leftEndPosition)
     {
@@ -336,26 +452,24 @@ void autonomous(void)
       RightDrive.spin(fwd, rdrive, pct);
       FrontRightDrive.spin(fwd, rdrive, pct);
     }
-    //int rightOffset = rightEndPosition - RightDrive.rotation(degrees);
-    //int leftOffset = leftEndPosition - LeftDrive.rotation(degrees);
-    //Move::moveDeg(rightOffset - leftOffset);
-    //RightDrive.spinFor(forward, -(RightDrive.rotation(degrees) - rightEndPosition), degrees);
-    LeftDrive.spin(fwd, 0, pct);
-    FrontLeftDrive.spin(fwd, 0, pct);
-    RightDrive.spin(fwd, 0, pct);
-    FrontRightDrive.spin(fwd, 0, pct);
+    */
+    Utils::brake();
 
     // 5. Reverse from goal, turn 180deg, reverse to goal
-    Move::moveMM(-300);
-    Move::moveDeg(170);
-    Move::moveMM(-475);
-
+  setIntakeSpeed(0);
+  driveSpeed(80);
+  Move::moveMM(-250);
+  Utils::brake();
+  Move::moveDeg(190);
+  Utils::brake();
+  Move::moveMM(-275);
 
 
     // 6. Eject payload
     setLiftSpeed(100);
+    setIntakeSpeed(100);
   }
-  */
+}
 
 /*
  // dump preload into center goal
@@ -489,7 +603,7 @@ void autonomous(void)
   RightDrive.spin(forward, 0, pct);
   
 
-   /*
+   
   Vision Example
     for(int i = 0; i < 123; i++)
     {
@@ -523,27 +637,28 @@ void usercontrol(void)
     {
       for(int n = 0; n < 1; n++)
       {
-         LeftDrive.spin(forward, 100, pct);
-         RightDrive.spin(reverse, 100, pct);
+         RearLeftDrive.spin(forward, 100, pct);
+         RearRightDrive.spin(reverse, 100, pct);
          FrontLeftDrive.spin(forward, 100, pct);
          FrontRightDrive.spin(reverse, 100, pct);
          wait(750, msec);
-         LeftDrive.setStopping(brake);
-         RightDrive.setStopping(brake);
+         RearLeftDrive.setStopping(brake);
+         RearRightDrive.setStopping(brake);
          FrontLeftDrive.setStopping(brake);
          FrontRightDrive.setStopping(brake);
-         // Move::moveDeg(180, LeftDrive, FrontLeftDrive, RightDrive, FrontRightDrive);
+         // SimpleMove::moveDeg(180, LeftDrive, FrontLeftDrive, RightDrive, FrontRightDrive);
       }
     }
-    driveX = 0.75 * Controller1.Axis1.position();  // wow! 60% turn speed
-    driveY = 0.85 * Controller1.Axis3.position();  // eh?  85% move speed
+    driveX = TURN_SPEED * Controller1.Axis1.position();
+    driveX += SLOW_TURN_SPEED * Controller1.Axis4.position();
+    driveY = DRIVE_SPEED * Controller1.Axis3.position();
 
     //Vision6.takeSnapshot(VISION_BALL);
     
-    if(Distance14.objectDistance(mm) > 350 or Distance14.objectDistance(mm) == 0)
+    if((Distance14.objectDistance(mm) > 350 or Distance14.objectDistance(mm) == 0) && driveY >= 0)
     {
       multipleColor();
-      SensorControl(5);
+      SensorControl(4.5, 0, 0, false);
     }
     else
     {
@@ -557,8 +672,8 @@ void usercontrol(void)
       }
     }
 
-    LeftDrive.spin(forward, driveY + driveX, pct);
-    RightDrive.spin(forward, driveY - driveX, pct);
+    RearLeftDrive.spin(forward, driveY + driveX, pct);
+    RearRightDrive.spin(forward, driveY - driveX, pct);
     FrontLeftDrive.spin(forward, driveY + driveX, pct);
     FrontRightDrive.spin(forward, driveY - driveX, pct);
     chainControl();
