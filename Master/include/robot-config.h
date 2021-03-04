@@ -6,8 +6,8 @@ using signature = vision::signature;
 
 // VEXcode devices
 extern controller Controller1;
-extern motor LeftDrive;
-extern motor RightDrive;
+extern motor RearLeftDrive;
+extern motor RearRightDrive;
 extern motor RightIntake;
 extern motor LeftIntake;
 extern motor RightLift;

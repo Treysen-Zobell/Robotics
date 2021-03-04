@@ -9,8 +9,8 @@ float Move::rightPos = 0;
 
 void Move::leftRear()
 {
-  LeftDrive.spinFor(vex::directionType::fwd, Move::leftPos, vex::deg);
-  while (!LeftDrive.isDone()) { wait(10, vex::msec); }
+  RearLeftDrive.spinFor(vex::directionType::fwd, Move::leftPos, vex::deg);
+  while (!RearLeftDrive.isDone()) { wait(10, vex::msec); }
 }
 
 void Move::leftFront()
@@ -21,8 +21,8 @@ void Move::leftFront()
 
 void Move::rightRear()
 {
-  RightDrive.spinFor(vex::directionType::fwd, Move::rightPos, vex::deg);
-  while (!RightDrive.isDone()) { wait(10, vex::msec); }
+  RearRightDrive.spinFor(vex::directionType::fwd, Move::rightPos, vex::deg);
+  while (!RearRightDrive.isDone()) { wait(10, vex::msec); }
 }
 
 void Move::rightFront()

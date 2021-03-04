@@ -9,8 +9,8 @@ brain  Brain;
 
 // VEXcode device constructors
 controller Controller1 = controller(primary);
-motor LeftDrive = motor(PORT1, ratio18_1, false);
-motor RightDrive = motor(PORT10, ratio18_1, true);
+motor RearLeftDrive = motor(PORT1, ratio18_1, false);
+motor RearRightDrive = motor(PORT10, ratio18_1, true);
 motor RightIntake = motor(PORT8, ratio18_1, true);
 motor LeftIntake = motor(PORT2, ratio18_1, false);
 motor RightLift = motor(PORT9, ratio18_1, true);
@@ -19,7 +19,7 @@ motor LeftLift = motor(PORT3, ratio18_1, false);
 signature Vision6__B_BALL = signature (1, -2963, -1839, -2400, 7223, 10627, 8924, 2.2, 0);
 signature Vision6__R_BALL = signature (2, 6377, 9115, 7746, -529, 321, -104, 2.2, 0);
 signature Vision6__SIG_7 = signature (7, 0, 0, 0, 0, 0, 0, 4.3, 0);
-vision Vision6 = vision (PORT6, 76, Vision6__B_BALL, Vision6__R_BALL, Vision6__SIG_7);
+vision Vision6 = vision (PORT6, 90, Vision6__B_BALL, Vision6__R_BALL, Vision6__SIG_7);
 /*vex-vision-config:end*/
 motor BarMotor = motor(PORT4, ratio18_1, false);
 motor FrontRightDrive = motor(PORT19, ratio18_1, true);
